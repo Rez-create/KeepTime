@@ -1,0 +1,1017 @@
+@font-face {
+  font-family: "DS-Digital";
+  src: url("fonts/DS-DIGIT.TTF") format("truetype");
+  font-weight: 700;
+  font-style: italic;
+}
+@font-face {
+  font-family: "DS-Digital";
+  src: url("fonts/DS-DIGII.TTF") format("truetype");
+  font-weight: 400;
+  font-style: italic;
+}
+
+:root {
+  --clock-color: #ff9500;
+  --icon: #e6e6e6;
+  --scale: 1;
+  --zoom: 1;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  background: #000;
+  overflow: hidden;
+}
+
+/* Centre the scaled canvas in the window. */
+body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The design is laid out on a 2166 x 1291 canvas that is scaled to fit the window. */
+.stage {
+  flex: none;
+  width: 2166px;
+  height: 1291px;
+  transform: scale(var(--scale));
+}
+
+/* Centre the title, time and date on the canvas. */
+.clock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--clock-color);
+  transform: scale(var(--zoom));
+}
+
+.title {
+  font-family: "Segoe UI Light", "Segoe UI", "Open Sans", sans-serif;
+  font-weight: 300;
+  font-size: 101px;
+  line-height: normal;
+  white-space: nowrap;
+}
+
+.time {
+  margin-top: 45px;
+  /* Optical centring: the italic digits lean right of their layout box. */
+  margin-right: 21px;
+  font-family: "DS-Digital", monospace;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 452px;
+  line-height: normal;
+  white-space: nowrap;
+  transform: scaleX(0.93);
+}
+
+/* The colon is drawn as two slanted blocks centred in each half of the digit, rather than the font's glyph. */
+.colon {
+  position: relative;
+  color: transparent;
+}
+.colon::before,
+.colon::after {
+  content: "";
+  position: absolute;
+  width: 0.0951em;
+  height: 0.0852em;
+  border-radius: 0.0066em;
+  background: var(--clock-color);
+  transform: skewX(-4deg);
+}
+.colon::before {
+  left: 0.0907em;
+  top: 0.3363em;
+}
+.colon::after {
+  left: 0.0752em;
+  top: 0.5686em;
+}
+
+/*
+ * Every digit sits in a fixed-width cell (the font's 560/1100 em advance) so the row never shifts.
+ * The font draws "1" with a narrow advance on the left; moving it 292/1100 em to the right lines its
+ * strokes up with the right-hand segments of the other digits, like a real seven-segment display.
+ */
+.digit {
+  display: inline-block;
+  width: 0.5091em;
+}
+.digit-one {
+  text-indent: 0.2655em;
+}
+
+.ampm {
+  display: inline-block;
+  position: relative;
+  top: -3px;
+  margin-left: 40px;
+  /* Balances the overflow from the horizontal stretch below so the row stays centred. */
+  margin-right: 34px;
+  font-size: 217px;
+  transform: scaleX(1.06);
+  transform-origin: 0 0;
+}
+
+.ampm[hidden] {
+  display: none;
+}
+
+/* Flip face: three cards (hours, minutes, seconds), each split across the middle like a split-flap display. */
+.flip {
+  display: flex;
+  align-items: center;
+  gap: 60px;
+}
+
+.flip-card {
+  position: relative;
+  width: 540px;
+  height: 600px;
+  perspective: 2400px;
+  font-family: "Open Sans", "Segoe UI", sans-serif;
+  font-weight: 700;
+  font-size: 420px;
+  font-variant-numeric: tabular-nums;
+  line-height: 600px;
+}
+
+.flip-half {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 50%;
+  overflow: hidden;
+  background: #161616;
+  backface-visibility: hidden;
+}
+.flip-top {
+  top: 0;
+  border-radius: 36px 36px 0 0;
+  transform-origin: bottom;
+}
+.flip-bottom {
+  bottom: 0;
+  border-radius: 0 0 36px 36px;
+  background: #121212;
+  transform-origin: top;
+}
+/* Each half shows its share of a full-height digit. */
+.flip-half span {
+  display: block;
+  height: 200%;
+  text-align: center;
+}
+.flip-bottom span {
+  transform: translateY(-50%);
+}
+
+/* The hinge between the two halves. */
+.flip-card::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  z-index: 2;
+  height: 6px;
+  margin-top: -3px;
+  background: #000;
+}
+
+.flap {
+  display: none;
+}
+.flipping .flap {
+  display: block;
+}
+.flipping .flap-out {
+  animation: flap-out 0.25s ease-in both;
+}
+.flipping .flap-in {
+  animation: flap-in 0.25s ease-out 0.25s both;
+}
+@keyframes flap-out {
+  to {
+    transform: rotateX(-90deg);
+  }
+}
+@keyframes flap-in {
+  from {
+    transform: rotateX(90deg);
+  }
+}
+
+.flip-ampm {
+  position: absolute;
+  top: 32px;
+  left: 36px;
+  z-index: 3;
+  font-size: 60px;
+  line-height: 1;
+}
+
+.flip-colon {
+  display: flex;
+  flex-direction: column;
+  gap: 120px;
+}
+.flip-colon::before,
+.flip-colon::after {
+  content: "";
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--clock-color);
+}
+
+/* Analog face: a round dial with rounded hands, drawn in a 200 x 200 SVG. */
+.analog {
+  width: 860px;
+  height: 860px;
+}
+.analog svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.analog .rim {
+  fill: #0d0d0d;
+  stroke: var(--clock-color);
+  stroke-width: 2.5;
+}
+.analog .tick-hour {
+  stroke: var(--clock-color);
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+.analog .tick-minute {
+  fill: var(--clock-color);
+  opacity: 0.5;
+}
+.analog .hand {
+  stroke: var(--clock-color);
+  stroke-linecap: round;
+}
+.analog .hand-hour {
+  stroke-width: 7;
+}
+.analog .hand-minute {
+  stroke-width: 4.5;
+}
+.analog .hand-second {
+  stroke-width: 1.6;
+}
+.analog .cap {
+  fill: var(--clock-color);
+}
+.analog .cap-inner {
+  fill: #0d0d0d;
+}
+
+.date {
+  margin-top: 58px;
+  /* Balances the larger line boxes of the digit rows so the whole group centres vertically. */
+  margin-bottom: 28px;
+  font-size: 101px;
+  line-height: normal;
+  letter-spacing: 15.3px;
+  /* Letter-spacing also trails the last character; mostly cancel it so the glyphs centre (the rest offsets the italic lean). */
+  margin-right: -7.3px;
+  word-spacing: -17px;
+  font-family: "DS-Digital", monospace;
+  font-weight: 400;
+  font-style: italic;
+  white-space: pre;
+}
+
+.controls {
+  position: fixed;
+  top: 18px;
+  right: 29px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 1;
+}
+
+.controls > button {
+  position: relative;
+  width: 19px;
+  height: 19px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0.8;
+}
+.controls > button:hover {
+  opacity: 1;
+}
+
+.controls > button svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--icon);
+  stroke-width: 1;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+#fullscreen .fs-exit,
+#fullscreen.is-fullscreen .fs-enter {
+  display: none;
+}
+#fullscreen.is-fullscreen .fs-exit {
+  display: inline;
+}
+
+/* Settings drawer */
+.backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  background: rgba(0, 0, 0, 0.5);
+}
+.backdrop[hidden] {
+  display: none;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  width: min(320px, 100vw);
+  padding: 20px 24px;
+  overflow-y: auto;
+  background: #121212;
+  border-left: 1px solid #2a2a2a;
+  color: #e6e6e6;
+  font-family: "Segoe UI", "Open Sans", sans-serif;
+  transform: translateX(100%);
+  transition: transform 0.25s ease;
+}
+.drawer.open {
+  transform: none;
+}
+
+.drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+}
+.drawer h2,
+.modal h2 {
+  font-size: 20px;
+  font-weight: 400;
+}
+
+.drawer-close {
+  width: 32px;
+  height: 32px;
+  padding: 8px;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+.drawer-close:hover {
+  background: #222;
+}
+.drawer-close svg {
+  width: 100%;
+  height: 100%;
+  stroke: #e6e6e6;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+
+.setting {
+  margin-bottom: 28px;
+}
+.setting h3 {
+  margin-bottom: 10px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+
+.segmented {
+  display: grid;
+  grid-auto-columns: 1fr;
+  grid-auto-flow: column;
+  border: 1px solid #333;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.segmented input,
+.swatch input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.segmented span {
+  display: block;
+  padding: 9px 0;
+  text-align: center;
+  font-size: 14px;
+  cursor: pointer;
+}
+.segmented label + label span {
+  border-left: 1px solid #333;
+}
+
+/* A one-column list, for options too long to sit side by side. */
+.segmented.stacked {
+  grid-auto-flow: row;
+}
+.segmented.stacked label + label > span {
+  border-top: 1px solid #333;
+  border-left: 0;
+}
+.segmented.stacked > label > span {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  text-align: left;
+}
+/* The example inside each option is plain text, not another option box. */
+.segmented.stacked span span {
+  display: inline;
+  padding: 0;
+  border: 0;
+}
+.segmented.stacked small {
+  font-size: 12px;
+  opacity: 0.6;
+}
+.segmented input:checked + span {
+  background: var(--clock-color);
+  color: #000;
+}
+.segmented input:focus-visible + span {
+  outline: 2px solid #fff;
+  outline-offset: -4px;
+}
+
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.swatch span {
+  display: block;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: var(--swatch) padding-box;
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 3px #121212;
+  cursor: pointer;
+}
+.swatch input:checked + span {
+  border-color: #e6e6e6;
+}
+.swatch input:focus-visible + span {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.custom-color {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.custom-color input {
+  width: 36px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid #333;
+  border-radius: 4px;
+  background: none;
+  cursor: pointer;
+}
+
+.controls svg .dot {
+  fill: var(--icon);
+  stroke: none;
+}
+
+/* Modals */
+.modal {
+  margin: auto;
+  width: min(520px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow-y: auto;
+  padding: 0;
+  border: 1px solid #2a2a2a;
+  border-radius: 10px;
+  background: #121212;
+  color: #e6e6e6;
+  font-family: "Segoe UI", "Open Sans", sans-serif;
+}
+.modal::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.modal-body {
+  padding: 20px 24px 24px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.modal-body .drawer-header {
+  margin-bottom: 2px;
+}
+.about p + p {
+  margin-top: 12px;
+}
+.about h2 small {
+  font-size: 0.6em;
+}
+.about-role {
+  margin-bottom: 16px;
+  font-size: 8px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--clock-color);
+}
+
+.about-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 20px;
+}
+.about-links a {
+  padding: 6px 12px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  color: #e6e6e6;
+  font-size: 13px;
+  text-decoration: none;
+}
+.about-links a:hover {
+  border-color: var(--clock-color);
+  color: var(--clock-color);
+}
+.about-links a:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+/* Icons take on the clock colour on hover. */
+.controls > button:hover svg,
+.drawer-close:hover svg {
+  stroke: var(--clock-color);
+}
+.controls > button:hover svg .dot {
+  fill: var(--clock-color);
+}
+
+/* Larger type for the modals on desktop; it grows with the screen so it stays in proportion to the clock. */
+@media (min-width: 768px) {
+  .modal {
+    font-size: clamp(17px, 0.85vw, 24px);
+    width: min(37.5em, calc(100vw - 32px));
+  }
+  .modal-body {
+    padding: 1.6em 1.9em 1.9em;
+    font-size: 1em;
+  }
+  .modal h2 {
+    font-size: 1.5em;
+  }
+  .about-role {
+    font-size: 0.6em;
+  }
+  .about-links a {
+    padding: 0.5em 0.9em;
+    font-size: 0.88em;
+  }
+  .modal .drawer-close {
+    width: 1.9em;
+    height: 1.9em;
+    padding: 0.45em;
+  }
+}
+
+/* Anything with the hidden attribute stays hidden, whatever display its class sets. */
+[hidden] {
+  display: none !important;
+}
+
+/* Mode toggle (Time vs Stopwatch) */
+.mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  background: #141414;
+  border: 1px solid #333333;
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+  margin-right: 4px;
+}
+
+.mode-toggle-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #888888;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.mode-toggle-btn:hover {
+  color: #cccccc;
+}
+
+.mode-toggle-btn.is-active {
+  background: var(--clock-color);
+  color: #000000;
+  font-weight: 600;
+}
+
+.mode-toggle-btn .mode-icon {
+  width: 12px;
+  height: 12px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.mode-toggle-btn.is-active .mode-icon {
+  stroke: #000000;
+}
+
+.mode-toggle-btn:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 1px;
+}
+
+/* A dot on the stopwatch option shows a session is still going while in Time mode. */
+.mode-toggle-btn .mode-badge {
+  position: absolute;
+  top: 3px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--clock-color);
+}
+
+@media (max-width: 540px) {
+  .controls {
+    top: 12px;
+    right: 14px;
+    gap: 7px;
+  }
+  .mode-toggle {
+    margin-right: 0;
+  }
+  .mode-toggle-btn {
+    height: 22px;
+    padding: 0 8px;
+    font-size: 10px;
+    gap: 4px;
+  }
+}
+
+.clock.is-paused .face {
+  animation: blink 1.2s steps(1) infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0.25;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .clock.is-paused .face {
+    animation: none;
+    opacity: 0.5;
+  }
+}
+
+.drawer h2 span {
+  margin-left: 6px;
+  color: var(--clock-color);
+}
+
+/* Stopwatch actions: a row of icons centred under the status line, scaled with the clock. */
+.sw-actions {
+  display: flex;
+  justify-content: center;
+  /* Never smaller than 32 screen pixels, so they stay easy to tap on a phone. */
+  --sw-icon: max(84px, calc(32px / var(--scale)));
+  gap: calc(var(--sw-icon) * 0.6);
+  margin-top: 10px;
+  /* Matches the date's optical offset so the row lines up under it. */
+  margin-right: -7.3px;
+}
+.sw-actions button {
+  width: var(--sw-icon);
+  height: var(--sw-icon);
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.sw-actions button:hover {
+  opacity: 1;
+}
+.sw-actions button:focus-visible {
+  outline: 2px solid var(--clock-color);
+  outline-offset: 6px;
+  border-radius: 4px;
+}
+.sw-actions svg {
+  width: 100%;
+  height: 100%;
+  fill: none;
+  stroke: var(--clock-color);
+  stroke-width: 1.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+/* Shared bits for the tasks drawer and the session modals */
+.hint {
+  color: #9a9a9a;
+}
+.label {
+  margin-bottom: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #8a8a8a;
+}
+.modal-section {
+  margin-top: 18px;
+}
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 22px;
+}
+
+.btn {
+  padding: 7px 14px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: none;
+  color: #e6e6e6;
+  font: inherit;
+  cursor: pointer;
+}
+.btn:hover {
+  border-color: var(--clock-color);
+  color: var(--clock-color);
+}
+.btn.primary {
+  border-color: var(--clock-color);
+  background: var(--clock-color);
+  color: #000;
+}
+.btn.primary:hover {
+  filter: brightness(1.1);
+  color: #000;
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+  filter: none;
+}
+.btn:focus-visible,
+.task-action:focus-visible,
+.task input:focus-visible,
+.add-task input:focus-visible,
+.modal textarea:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+
+.tasks {
+  list-style: none;
+}
+.task {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 0;
+  border-bottom: 1px solid #222;
+}
+.task label {
+  display: flex;
+  flex: 1;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.task input {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  margin-top: 3px;
+  accent-color: var(--clock-color);
+  cursor: pointer;
+}
+.task:has(input) label {
+  cursor: pointer;
+}
+.task.done span {
+  text-decoration: line-through;
+  text-decoration-color: var(--clock-color);
+  color: #777;
+}
+.task-action {
+  flex: none;
+  padding: 0 2px;
+  border: 0;
+  background: none;
+  color: #777;
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+.task-action:hover {
+  color: var(--clock-color);
+}
+.drawer .task-action {
+  opacity: 0;
+}
+.drawer .task:hover .task-action,
+.drawer .task-action:focus-visible {
+  opacity: 1;
+}
+@media (hover: none) {
+  .drawer .task-action {
+    opacity: 1;
+  }
+}
+
+.add-task {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.add-task input,
+.modal textarea {
+  flex: 1;
+  min-width: 0;
+  padding: 7px 10px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #0b0b0b;
+  color: #e6e6e6;
+  font: inherit;
+}
+.modal textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+}
+
+/* History */
+.modal-wide {
+  width: min(640px, calc(100vw - 32px));
+}
+.history-search {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 7px 10px;
+  border: 1px solid #333;
+  border-radius: 6px;
+  background: #0b0b0b;
+  color: #e6e6e6;
+  font: inherit;
+}
+.history-search:focus-visible {
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.history-status:not(:empty) {
+  margin-top: 8px;
+}
+.history-list {
+  list-style: none;
+  margin-top: 16px;
+}
+.history-clear {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #2a2a2a;
+}
+.history-clear > .task-action {
+  padding: 0;
+  font-size: 13px;
+}
+.history-confirm .modal-actions {
+  margin-top: 12px;
+}
+.btn.danger {
+  border-color: #ff453a;
+  background: #ff453a;
+  color: #000;
+}
+.btn.danger:hover {
+  filter: brightness(1.1);
+  color: #000;
+}
+.pager {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 14px;
+  border-top: 1px solid #2a2a2a;
+  color: #9a9a9a;
+}
+.history-item {
+  padding: 14px 0;
+  border-top: 1px solid #2a2a2a;
+}
+.history-head {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 6px;
+}
+.history-head span {
+  color: var(--clock-color);
+}
+.history-item .task {
+  border-bottom: 0;
+  padding: 2px 0;
+}
+.history-item .task::before {
+  content: "○";
+  flex: none;
+  width: 14px;
+  color: #777;
+}
+.history-item .task.done::before {
+  content: "✓";
+  color: var(--clock-color);
+}
+.history-note {
+  margin-top: 8px;
+  padding-left: 10px;
+  border-left: 2px solid var(--clock-color);
+  color: #bbb;
+  white-space: pre-wrap;
+}
+.history-item > .task-action {
+  margin-top: 8px;
+  padding: 0;
+}
+
+@media (min-width: 768px) {
+  .modal-wide {
+    width: min(42em, calc(100vw - 32px));
+  }
+}
