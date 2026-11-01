@@ -1,5 +1,5 @@
 // Changing the version clears old caches; updates show on reload either way since fetches are network-first.
-const CACHE = "keeptime-v3";
+const CACHE = "keeptime-v4";
 const SHELL = [
   "./",
   "index.html",

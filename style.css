@@ -1015,3 +1015,16 @@ body {
     width: min(42em, calc(100vw - 32px));
   }
 }
+
+/* Hide Netlify injected badge / widget */
+iframe#netlify-badge,
+#netlify-badge,
+.netlify-badge,
+[data-netlify-badge],
+a[href*="netlify.com"][class*="badge"],
+netlify-drawer {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
