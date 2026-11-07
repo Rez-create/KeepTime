@@ -8,7 +8,8 @@ const DISMISSED_KEY = "clock-dismissed-tasks";
 
 function readJSON(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+    const val = JSON.parse(localStorage.getItem(key));
+    return val !== null && val !== undefined ? val : fallback;
   } catch {
     return fallback;
   }

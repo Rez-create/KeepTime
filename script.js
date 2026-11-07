@@ -1,3 +1,56 @@
+// Polyfills and compatibility checks for legacy mobile browsers (e.g. iOS 12 on iPad mini 2)
+if (!Element.prototype.replaceChildren) {
+  Element.prototype.replaceChildren = function (...nodes) {
+    while (this.firstChild) {
+      this.removeChild(this.firstChild);
+    }
+    this.append(...nodes);
+  };
+}
+
+(function checkFlexGap() {
+  const flex = document.createElement("div");
+  flex.style.display = "flex";
+  flex.style.flexDirection = "column";
+  flex.style.rowGap = "1px";
+  flex.appendChild(document.createElement("div"));
+  flex.appendChild(document.createElement("div"));
+  document.body.appendChild(flex);
+  const isSupported = flex.scrollHeight === 1;
+  flex.parentNode.removeChild(flex);
+  if (!isSupported) {
+    document.documentElement.classList.add("no-flexbox-gap");
+  }
+})();
+
+if (typeof HTMLDialogElement === "undefined" || !HTMLDialogElement.prototype.showModal) {
+  for (const dialog of document.querySelectorAll("dialog")) {
+    dialog.classList.add("dialog-fallback");
+    if (!dialog.showModal) {
+      dialog.showModal = function () {
+        this.setAttribute("open", "");
+        let backdrop = this.previousElementSibling;
+        if (!backdrop || !backdrop.classList.contains("dialog-backdrop")) {
+          backdrop = document.createElement("div");
+          backdrop.className = "dialog-backdrop";
+          backdrop.addEventListener("click", () => this.close());
+          this.parentNode.insertBefore(backdrop, this);
+        }
+        backdrop.hidden = false;
+      };
+    }
+    if (!dialog.close) {
+      dialog.close = function () {
+        this.removeAttribute("open");
+        const backdrop = this.previousElementSibling;
+        if (backdrop && backdrop.classList.contains("dialog-backdrop")) {
+          backdrop.hidden = true;
+        }
+      };
+    }
+  }
+}
+
 const DESIGN_WIDTH = 2166;
 const DESIGN_HEIGHT = 1291;
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
@@ -195,7 +248,7 @@ function scheduleTick() {
   clearTimeout(tickTimer);
   render();
   // Re-sync to the start of the next second (of the clock, or of the running stopwatch) so the display never drifts.
-  const ms = isStopwatch() && active?.resumedAt ? elapsedOf(active) : Date.now();
+  const ms = isStopwatch() && active && active.resumedAt ? elapsedOf(active) : Date.now();
   tickTimer = setTimeout(scheduleTick, 1000 - (ms % 1000));
 }
 
@@ -225,22 +278,45 @@ document.getElementById("zoom-in").addEventListener("click", () => setZoom(zoom 
 document.getElementById("zoom-out").addEventListener("click", () => setZoom(zoom - 0.1));
 const fullscreenButton = document.getElementById("fullscreen");
 
+function getFullscreenElement() {
+  return (
+    document.fullscreenElement ||
+    document.webkitFullscreenElement ||
+    document.mozFullScreenElement ||
+    document.msFullscreenElement ||
+    null
+  );
+}
+
 fullscreenButton.addEventListener("click", () => {
-  if (document.fullscreenElement) {
-    document.exitFullscreen();
+  if (getFullscreenElement()) {
+    if (document.exitFullscreen) document.exitFullscreen();
+    else if (document.webkitExitFullscreen) document.webkitExitFullscreen();
+    else if (document.mozCancelFullScreen) document.mozCancelFullScreen();
+    else if (document.msExitFullscreen) document.msExitFullscreen();
   } else {
-    document.documentElement.requestFullscreen();
+    const el = document.documentElement;
+    if (el.requestFullscreen) el.requestFullscreen();
+    else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen();
+    else if (el.mozRequestFullScreen) el.mozRequestFullScreen();
+    else if (el.msRequestFullscreen) el.msRequestFullscreen();
   }
 });
 
 // The icon always shows the action the button will take next (also covers leaving with Esc).
 function updateFullscreenButton() {
-  const isFullscreen = Boolean(document.fullscreenElement);
+  const isFullscreen = Boolean(getFullscreenElement());
   fullscreenButton.classList.toggle("is-fullscreen", isFullscreen);
   fullscreenButton.setAttribute("aria-label", isFullscreen ? "Exit fullscreen" : "Enter fullscreen");
 }
 
 document.addEventListener("fullscreenchange", updateFullscreenButton);
+document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+
+// Hide fullscreen toggle on devices that do not support element fullscreen (like iOS Safari)
+if (!document.documentElement.requestFullscreen && !document.documentElement.webkitRequestFullscreen) {
+  fullscreenButton.hidden = true;
+}
 
 // Side drawers (settings and tasks) share one backdrop; only one is open at a time.
 const backdrop = document.getElementById("backdrop");
@@ -256,7 +332,7 @@ function setDrawerOpen(drawer, open, focusEl) {
   trigger.setAttribute("aria-expanded", String(open));
   openDrawer = open ? drawer : null;
   if (open) {
-    focusEl?.focus();
+    if (focusEl) focusEl.focus();
   } else {
     trigger.focus();
   }
@@ -331,7 +407,10 @@ for (const input of document.querySelectorAll('input[name="face"]')) {
 const dateFormatsEl = document.getElementById("date-formats");
 
 // Unknown values (e.g. from an older version) fall back to the first format.
-const dateFormat = () => DATE_FORMATS.find((f) => f.value === settings.dateFormat) ?? DATE_FORMATS[0];
+const dateFormat = () => {
+  const found = DATE_FORMATS.find((f) => f.value === settings.dateFormat);
+  return found || DATE_FORMATS[0];
+};
 
 // The options show today's date in each format, so they are rebuilt whenever the drawer opens.
 function renderDateFormats() {
@@ -342,7 +421,7 @@ function renderDateFormats() {
       label.innerHTML = `<input type="radio" name="date-format" value="${value}"><span><span></span><small></small></span>`;
       label.querySelector("input").checked = value === dateFormat().value;
       label.querySelector("span span").textContent = format(now);
-      label.querySelector("small").textContent = hint ?? "";
+      label.querySelector("small").textContent = hint != null ? hint : "";
       return label;
     }),
   );
@@ -540,7 +619,7 @@ function saveSession() {
 }
 
 function renderSession() {
-  const running = Boolean(active?.resumedAt);
+  const running = Boolean(active && active.resumedAt);
   const stopwatch = isStopwatch();
   if (modeClockBtn && modeStopwatchBtn) {
     modeClockBtn.classList.toggle("is-active", !stopwatch);
@@ -906,6 +985,7 @@ document.getElementById("history-open").addEventListener("click", () => {
 });
 
 window.addEventListener("resize", fitToWindow);
+window.addEventListener("orientationchange", () => setTimeout(fitToWindow, 100));
 applyColor(settings.color);
 renderSession();
 scheduleTick();
@@ -914,7 +994,11 @@ fitToWindow();
 applyFace(settings.face);
 updateWakeLock();
 // The digital font changes the clock's width once it loads, so re-check the zoom then.
-document.fonts.ready.then(() => setZoom(zoom));
+if (document.fonts && document.fonts.ready) {
+  document.fonts.ready.then(() => setZoom(zoom));
+} else {
+  setTimeout(() => setZoom(zoom), 300);
+}
 
 // Offline support and installability.
 if ("serviceWorker" in navigator) {
