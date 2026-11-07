@@ -14,6 +14,7 @@ KeepTime is designed to provide a distraction-free, highly readable clock and ti
   - Split-flap flip clock
   - Round analog dial
 - **Time & Date Formatting**: Support for 12-hour and 24-hour formats, with an optional date display in five formats.
+- **Keep Screen Awake**: Built-in screen wake lock keeps phone and computer screens awake without dimming, timing out, or locking.
 - **Customization**: Eight curated color presets plus a full RGB color picker.
 - **Display Controls**: In-window zoom adjustments and one-click fullscreen mode.
 - **Stopwatch & Session Management**: Built-in stopwatch for focused work sessions with task tracking and session notes.

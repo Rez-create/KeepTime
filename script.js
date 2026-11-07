@@ -28,6 +28,7 @@ const DEFAULT_SETTINGS = {
   face: "digital",
   date: "show",
   dateFormat: DATE_FORMATS[0].value,
+  wakeLock: "on",
 };
 
 const root = document.documentElement;
@@ -366,6 +367,74 @@ for (const input of document.querySelectorAll('input[name="date"]')) {
     setZoom(zoom);
   });
 }
+
+// Screen Wake Lock keeps the phone/monitor display on without timeout.
+let wakeLockSentinel = null;
+
+async function requestWakeLock() {
+  if (!("wakeLock" in navigator)) return;
+  if (settings.wakeLock !== "on") return;
+  if (wakeLockSentinel !== null && !wakeLockSentinel.released) return;
+
+  try {
+    wakeLockSentinel = await navigator.wakeLock.request("screen");
+    wakeLockSentinel.addEventListener("release", () => {
+      wakeLockSentinel = null;
+    });
+  } catch {
+    // Fails silently if low battery, page visibility hidden, or permission denied.
+  }
+}
+
+async function releaseWakeLock() {
+  if (wakeLockSentinel) {
+    try {
+      await wakeLockSentinel.release();
+    } catch {
+      // Ignore release errors.
+    }
+    wakeLockSentinel = null;
+  }
+}
+
+function updateWakeLock() {
+  if (settings.wakeLock === "on") {
+    requestWakeLock();
+  } else {
+    releaseWakeLock();
+  }
+}
+
+const wakeLockUnsupportedEl = document.getElementById("wake-lock-unsupported");
+if (!("wakeLock" in navigator) && wakeLockUnsupportedEl) {
+  wakeLockUnsupportedEl.hidden = false;
+}
+
+for (const input of document.querySelectorAll('input[name="wake-lock"]')) {
+  input.checked = input.value === settings.wakeLock;
+  input.addEventListener("change", () => {
+    settings.wakeLock = input.value;
+    saveSettings();
+    updateWakeLock();
+  });
+}
+
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState === "visible" && settings.wakeLock === "on") {
+    requestWakeLock();
+  }
+});
+
+// Some browsers require a user interaction before granting a wake lock.
+const onWakeLockInteraction = () => {
+  if (settings.wakeLock === "on") {
+    requestWakeLock();
+  }
+  window.removeEventListener("pointerdown", onWakeLockInteraction);
+  window.removeEventListener("keydown", onWakeLockInteraction);
+};
+window.addEventListener("pointerdown", onWakeLockInteraction, { passive: true });
+window.addEventListener("keydown", onWakeLockInteraction, { passive: true });
 
 document.getElementById("settings-open").addEventListener("click", () => {
   renderDateFormats();
@@ -843,6 +912,7 @@ scheduleTick();
 fitToWindow();
 // After fitting, so the zoom check for the chosen face measures it at the right scale.
 applyFace(settings.face);
+updateWakeLock();
 // The digital font changes the clock's width once it loads, so re-check the zoom then.
 document.fonts.ready.then(() => setZoom(zoom));
 

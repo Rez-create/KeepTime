@@ -300,6 +300,25 @@
           <span>Custom color</span>
         </label>
       </section>
+
+      <section class="setting" id="wake-lock-setting">
+        <h3>Keep screen awake</h3>
+        <div class="segmented" role="radiogroup" aria-label="Keep screen awake">
+          <label
+            ><input type="radio" name="wake-lock" value="on" /><span
+              >On</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="wake-lock" value="off" /><span
+              >Off</span
+            ></label
+          >
+        </div>
+        <p class="setting-hint" id="wake-lock-unsupported" hidden>
+          Screen wake lock is not supported on this browser.
+        </p>
+      </section>
     </aside>
 
     <dialog class="modal" id="start-dialog" aria-labelledby="start-title">
