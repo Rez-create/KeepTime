@@ -64,6 +64,7 @@ const COLORS = [
   { name: "Blue", value: "#4d8dff" },
   { name: "Pink", value: "#ff4fd8" },
   { name: "White", value: "#f2f2f2" },
+  { name: "Grey", value: "#8e8e93" },
 ];
 const STORAGE_KEY = "clock-settings";
 // Each date format's hint spells out the order of numeric dates, which an example alone can leave ambiguous.
@@ -82,6 +83,7 @@ const DEFAULT_SETTINGS = {
   date: "show",
   dateFormat: DATE_FORMATS[0].value,
   wakeLock: "on",
+  background: "solid",
 };
 
 const root = document.documentElement;
@@ -98,11 +100,33 @@ let active = loadActive();
 let tickTimer;
 
 function loadSettings() {
+  let loaded = {};
   try {
-    return { ...DEFAULT_SETTINGS, ...JSON.parse(localStorage.getItem(STORAGE_KEY)) };
+    loaded = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {};
   } catch {
-    return { ...DEFAULT_SETTINGS };
+    // Storage may be unavailable (e.g. private mode); settings then last for this visit only.
   }
+  const merged = { ...DEFAULT_SETTINGS, ...loaded };
+
+  // URL parameters allow instant IDE embedding without touching local storage
+  const params = new URLSearchParams(window.location.search);
+  if (params.get("transparent") === "true" || params.get("transparent") === "1" || params.has("ide")) {
+    merged.background = "transparent";
+    if (merged.color === DEFAULT_SETTINGS.color && !params.has("color")) {
+      merged.color = "#8e8e93";
+    }
+  }
+  if (params.has("color")) {
+    const c = params.get("color").toLowerCase();
+    if (c === "grey" || c === "gray") {
+      merged.color = "#8e8e93";
+    } else if (COLORS.some((item) => item.name.toLowerCase() === c)) {
+      merged.color = COLORS.find((item) => item.name.toLowerCase() === c).value;
+    } else if (/^#[0-9a-f]{3,8}$/i.test(params.get("color"))) {
+      merged.color = params.get("color");
+    }
+  }
+  return merged;
 }
 
 function saveSettings() {
@@ -347,6 +371,29 @@ document.addEventListener("keydown", (event) => {
 const settingsDrawer = document.getElementById("settings");
 const swatchesEl = document.getElementById("swatches");
 const customColorInput = document.getElementById("custom-color");
+
+function applyBackground(background, autoSetColor = false) {
+  settings.background = background;
+  const isTransparent = background === "transparent";
+  document.documentElement.classList.toggle("is-transparent", isTransparent);
+  document.body.classList.toggle("is-transparent", isTransparent);
+  for (const input of document.querySelectorAll('input[name="background"]')) {
+    input.checked = input.value === background;
+  }
+  if (isTransparent && autoSetColor) {
+    applyColor("#8e8e93");
+  }
+  saveSettings();
+}
+
+for (const input of document.querySelectorAll('input[name="background"]')) {
+  input.checked = input.value === settings.background;
+  input.addEventListener("change", () => {
+    // If switching to transparent and current color is default orange, auto-switch to grey
+    const shouldAutoGrey = input.value === "transparent" && settings.color === DEFAULT_SETTINGS.color;
+    applyBackground(input.value, shouldAutoGrey);
+  });
+}
 
 function applyColor(color) {
   settings.color = color;
@@ -986,6 +1033,7 @@ document.getElementById("history-open").addEventListener("click", () => {
 
 window.addEventListener("resize", fitToWindow);
 window.addEventListener("orientationchange", () => setTimeout(fitToWindow, 100));
+applyBackground(settings.background);
 applyColor(settings.color);
 renderSession();
 scheduleTick();

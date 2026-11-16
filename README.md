@@ -15,7 +15,8 @@ KeepTime is designed to provide a distraction-free, highly readable clock and ti
   - Round analog dial
 - **Time & Date Formatting**: Support for 12-hour and 24-hour formats, with an optional date display in five formats.
 - **Keep Screen Awake**: Built-in screen wake lock keeps phone and computer screens awake without dimming, timing out, or locking.
-- **Customization**: Eight curated color presets plus a full RGB color picker.
+- **Customization**: Nine curated color presets (including IDE grey) plus a full RGB color picker.
+- **Transparent Background & IDE Mode**: Toggle between solid black and transparent background in settings, or launch with `?transparent=1` (or `?ide=1`) in the URL. Ideal for embedding directly into IDE editor tabs (such as VS Code's Simple Browser), webview panels, or desktop window overlays.
 - **Display Controls**: In-window zoom adjustments and one-click fullscreen mode.
 - **Stopwatch & Session Management**: Built-in stopwatch for focused work sessions with task tracking and session notes.
 - **Persistent State**: Clock preferences and session history are saved locally in the browser.
