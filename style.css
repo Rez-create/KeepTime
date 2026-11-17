@@ -46,6 +46,10 @@ body {
   -webkit-transform: scale(var(--scale));
   transform: scale(var(--scale));
 }
+.stage.is-vertical {
+  width: 1200px;
+  height: 2166px;
+}
 
 /* Centre the title, time and date on the canvas. */
 .clock {
@@ -114,6 +118,10 @@ body {
 }
 .digit-one {
   text-indent: 0.2655em;
+}
+
+.time-row {
+  display: inline-block;
 }
 
 .ampm {
@@ -302,6 +310,65 @@ body {
   font-weight: 400;
   font-style: italic;
   white-space: pre;
+}
+
+/* Vertical orientation mode */
+.stage.is-vertical .time {
+  margin-top: 0;
+  margin-right: 21px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  font-size: 440px;
+  line-height: 0.92;
+  transform: scaleX(0.93);
+}
+
+.stage.is-vertical .time #time {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.stage.is-vertical .time .time-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage.is-vertical .time .colon {
+  display: none;
+}
+
+.stage.is-vertical .ampm {
+  position: absolute;
+  top: 25px;
+  left: calc(50% + 245px);
+  margin: 0;
+  font-size: 130px;
+  line-height: 1;
+}
+
+.stage.is-vertical .flip {
+  flex-direction: column;
+  gap: 24px;
+}
+
+.stage.is-vertical .flip-colon {
+  display: none;
+}
+
+.stage.is-vertical .date {
+  margin-top: 40px;
+  font-size: 54px;
+  letter-spacing: 0.08em;
+  text-align: center;
+}
+
+.stage.is-vertical .sw-actions {
+  margin-top: 32px;
 }
 
 .controls {
@@ -1087,6 +1154,13 @@ dialog.dialog-fallback[open] {
 }
 .no-flexbox-gap .task > * + * {
   margin-left: 8px;
+}
+.no-flexbox-gap .stage.is-vertical .time #time > * + * {
+  margin-top: 16px;
+}
+.no-flexbox-gap .stage.is-vertical .flip > * + * {
+  margin-top: 24px;
+  margin-left: 0;
 }
 
 /* Hide Netlify injected badge / widget */

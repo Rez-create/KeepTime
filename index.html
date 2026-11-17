@@ -113,10 +113,16 @@
       <div class="clock" id="clock">
         <div class="time face" data-face="digital">
           <span id="time"
-            ><span class="digit digit-one">1</span><span class="digit">0</span
-            ><span class="colon">:</span><span class="digit">0</span
-            ><span class="digit">7</span><span class="colon">:</span
-            ><span class="digit">3</span><span class="digit">3</span></span
+            ><span class="time-row time-hours"
+              ><span class="digit digit-one">1</span><span class="digit">0</span
+            ></span
+            ><span class="colon">:</span><span class="time-row time-minutes"
+              ><span class="digit">0</span><span class="digit">7</span
+            ></span
+            ><span class="colon">:</span><span class="time-row time-seconds"
+              ><span class="digit">3</span><span class="digit">3</span
+            ></span
+          ></span
           ><span class="ampm" id="ampm">PM</span>
         </div>
         <div class="flip face" data-face="flip" hidden>
@@ -256,6 +262,27 @@
           <label
             ><input type="radio" name="format" value="24" /><span
               >24 hour</span
+            ></label
+          >
+        </div>
+      </section>
+
+      <section class="setting" id="orientation-setting">
+        <h3>Orientation</h3>
+        <div class="segmented" role="radiogroup" aria-label="Orientation">
+          <label
+            ><input type="radio" name="orientation" value="auto" /><span
+              >Auto</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="orientation" value="horizontal" /><span
+              >Horizontal</span
+            ></label
+          >
+          <label
+            ><input type="radio" name="orientation" value="vertical" /><span
+              >Vertical</span
             ></label
           >
         </div>

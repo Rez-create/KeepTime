@@ -53,6 +53,8 @@ if (typeof HTMLDialogElement === "undefined" || !HTMLDialogElement.prototype.sho
 
 const DESIGN_WIDTH = 2166;
 const DESIGN_HEIGHT = 1291;
+const DESIGN_V_WIDTH = 1200;
+const DESIGN_V_HEIGHT = 2166;
 const DAYS = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 const MONTHS = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
 const COLORS = [
@@ -83,9 +85,11 @@ const DEFAULT_SETTINGS = {
   date: "show",
   dateFormat: DATE_FORMATS[0].value,
   wakeLock: "on",
+  orientation: "auto",
 };
 
 const root = document.documentElement;
+const stageEl = document.getElementById("stage");
 const clockEl = document.getElementById("clock");
 const timeEl = document.getElementById("time");
 const ampmEl = document.getElementById("ampm");
@@ -118,14 +122,27 @@ const pad = (n) => String(n).padStart(2, "0");
 
 const isStopwatch = () => settings.mode === "stopwatch";
 
-function renderDigits(time) {
-  timeEl.innerHTML = [...time]
-    .map((char) => {
-      if (char === ":") return '<span class="colon">:</span>';
-      if (char === " ") return '<span class="digit"></span>';
-      return `<span class="digit${char === "1" ? " digit-one" : ""}">${char}</span>`;
-    })
-    .join("");
+function renderDigits(timeOrPairs) {
+  let pairs;
+  if (Array.isArray(timeOrPairs)) {
+    pairs = timeOrPairs;
+  } else {
+    pairs = String(timeOrPairs).split(":");
+  }
+  const formatPair = (str) =>
+    [...str]
+      .map((char) => {
+        if (char === " ") return '<span class="digit"></span>';
+        return `<span class="digit${char === "1" ? " digit-one" : ""}">${char}</span>`;
+      })
+      .join("");
+
+  timeEl.innerHTML =
+    `<span class="time-row time-hours">${formatPair(pairs[0] || "")}</span>` +
+    `<span class="colon">:</span>` +
+    `<span class="time-row time-minutes">${formatPair(pairs[1] || "")}</span>` +
+    `<span class="colon">:</span>` +
+    `<span class="time-row time-seconds">${formatPair(pairs[2] || "")}</span>`;
 }
 
 // Flip face: each card stacks a static top and bottom half with two flaps that animate between them.
@@ -204,7 +221,7 @@ function renderTime(pairs, hours, minutes, seconds) {
   } else if (settings.face === "analog") {
     renderAnalog(hours, minutes, seconds);
   } else {
-    renderDigits(pairs.join(":"));
+    renderDigits(pairs);
   }
 }
 
@@ -253,8 +270,18 @@ function scheduleTick() {
   tickTimer = setTimeout(scheduleTick, 1000 - (ms % 1000));
 }
 
+function isVertical() {
+  if (settings.orientation === "vertical") return true;
+  if (settings.orientation === "horizontal") return false;
+  return window.innerWidth < window.innerHeight;
+}
+
 function fitToWindow() {
-  const scale = Math.min(window.innerWidth / DESIGN_WIDTH, window.innerHeight / DESIGN_HEIGHT);
+  const vertical = isVertical();
+  stageEl.classList.toggle("is-vertical", vertical);
+  const designW = vertical ? DESIGN_V_WIDTH : DESIGN_WIDTH;
+  const designH = vertical ? DESIGN_V_HEIGHT : DESIGN_HEIGHT;
+  const scale = Math.min(window.innerWidth / designW, window.innerHeight / designH);
   root.style.setProperty("--scale", scale);
   setZoom(zoom);
 }
@@ -262,8 +289,8 @@ function fitToWindow() {
 // The largest zoom at which the clock face (including AM/PM), the date and the stopwatch actions still fit the window.
 // Rendered sizes grow linearly with zoom, so measuring at the current zoom and dividing it out gives the size at 1x.
 function maxZoom() {
-  const rows = [...document.querySelectorAll(".face"), dateEl, document.getElementById("sw-actions")];
-  const rects = rows.filter((el) => !el.hidden).map((el) => el.getBoundingClientRect());
+  const rows = [...document.querySelectorAll(".face"), dateEl, ampmEl, document.getElementById("sw-actions")];
+  const rects = rows.filter((el) => el && !el.hidden).map((el) => el.getBoundingClientRect());
   const width = Math.max(...rects.map((r) => r.width)) / zoom;
   const height = (Math.max(...rects.map((r) => r.bottom)) - Math.min(...rects.map((r) => r.top))) / zoom;
   // Leave a little room for the italic glyphs, which lean past their layout boxes.
@@ -378,6 +405,15 @@ for (const input of document.querySelectorAll('input[name="format"]')) {
     render();
     // AM/PM makes the 12-hour row wider, so the current zoom may no longer fit.
     setZoom(zoom);
+  });
+}
+
+for (const input of document.querySelectorAll('input[name="orientation"]')) {
+  input.checked = input.value === (settings.orientation || "auto");
+  input.addEventListener("change", () => {
+    settings.orientation = input.value;
+    saveSettings();
+    fitToWindow();
   });
 }
 

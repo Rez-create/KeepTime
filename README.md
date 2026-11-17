@@ -8,7 +8,7 @@ KeepTime is designed to provide a distraction-free, highly readable clock and ti
 
 ## Features
 
-- **Responsive Display**: Seven-segment digital display that scales smoothly to fill any screen without shifting layout as digits change.
+- **Responsive Display & Orientation**: Seven-segment digital display that scales smoothly to fill any screen without shifting layout. Automatically adapts to a vertical stacked layout (hours, minutes, seconds) when the viewport width is reduced or in portrait mode, with manual orientation controls (Auto, Horizontal, Vertical) in settings.
 - **Multiple Clock Faces**: Switch between three distinct faces in settings:
   - Seven-segment digital display
   - Split-flap flip clock
